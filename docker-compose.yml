@@ -1,0 +1,69 @@
+services:
+  http_server:
+    image: vsensetechnologies/biometric-http-server:latest
+    container_name: biometric_http_server
+    restart: always
+    ports:
+      - "9080:8080"
+    environment:
+      - DB_URL=${S1_DATABASE_URL}
+      - REDIS_URL=${S1_CACHE_URL}
+      - SERVER_PORT=${S1_SERVER_PORT}
+      - SMTP_USERNAME=${S1_SMTP_USERNAME}
+      - SMTP_PASSWORD=${S1_SMTP_PASSWORD}
+      - SMTP_SERVICE=${S1_SMTP_SERVICE}
+    # volumes:
+    #   - ./http_server.log:/app/app.log
+
+  mqtt_message_processor:
+    image: vsensetechnologies/biometric-mqtt-message-processor
+    container_name: biometric_mqtt_message_processor
+    restart: always
+    command:
+      [
+        "./wait-for-it.sh",
+        "-h",
+        "biometric_mqtt_broker",
+        "-p",
+        "5000",
+        "-t",
+        "0",
+        "--",
+        "./main",
+      ]
+    environment:
+      - MQTT_CLIENT_ID=${S2_MQTT_CLIENT_ID}
+      - MQTT_HOST=${S2_BROKER_HOST}
+      - MQTT_PORT=${S2_BROKER_PORT}
+      - DB_URI=${S2_DATABASE_URL}
+      - REDIS_URI=${S2_CACHE_URL}
+      - REDIS_ATTENDENCE_LIST_NAME=${S2_CACHE_ATTENDENCE_LIST_NAME}
+      - REDIS_INSERT_JSON_NAME=${S2_CACHE_INSERT_JSON_NAME}
+      - REDIS_DELETE_JSON_NAME=${S2_CACHE_DELETE_JSON_NAME}
+    volumes:
+      - ./wait-for-it.sh:/app/wait-for-it.sh
+      - ./mqtt_message_processor.log:/app/app.log
+
+  mqtt_broker:
+    image: emqx/emqx-enterprise:5.8.1
+    container_name: biometric_mqtt_broker
+    ports:
+      - 5000:1883
+      # - 8083:8083
+      # - 8084:8084
+      # - 8883:8883
+      # - 18083:18083
+    environment:
+      - EMQX_NODE_NAME=${S3_EMQX_NODE_NAME}
+      - EMQX_CLUSTER__DISCOVERY_STRATEGY=${S3_EMQX_CLUSTER__DISCOVERY_STRATEGY}
+      - EMQX_CLUSTER__STATIC__SEEDS=${S3_EMQX_CLUSTER__STATIC__SEEDS}
+
+  cache_to_db_pusher:
+    image: vsensetechnologies/biometric-cache-to-db-pusher:latest
+    container_name: biometric_cache_to_db_pusher
+    environment:
+      - DB_URI=${S4_DATABASE_URL}
+      - REDIS_LIST_NAME=${S4_CACHE_LIST_NAME}
+      - REDIS_URI=${S4_CACHE_URL}
+    volumes:
+      - ./cache_to_db_pusher.log:/app/app.log
