@@ -25,7 +25,7 @@ services:
         "-h",
         "biometric_mqtt_broker",
         "-p",
-        "5000",
+        "1883",
         "-t",
         "0",
         "--",
