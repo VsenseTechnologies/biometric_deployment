@@ -42,7 +42,7 @@ services:
       - REDIS_DELETE_JSON_NAME=${S2_CACHE_DELETE_JSON_NAME}
     volumes:
       - ./wait-for-it.sh:/app/wait-for-it.sh
-      - ./mqtt_message_processor.log:/app/app.log
+      - ./mqtt_message_proccessor.log:/app/app.log
 
   mqtt_broker:
     image: emqx/emqx-enterprise:5.8.1
